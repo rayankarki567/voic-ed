@@ -60,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <div className="rounded-full bg-primary p-1">
                     <PieChart className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <span>Student E-Gov</span>
+                  <span>VoicED</span>
                 </div>
                 <nav className="flex flex-col gap-4">
                   {navigation.map((item) => {
