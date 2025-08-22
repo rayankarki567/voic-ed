@@ -9,7 +9,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Welcome back, Mark! Here's what's happening in your student community.</p>
+        <p className="text-muted-foreground">Welcome back, Rayan! Here's what's happening in your student community.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -124,10 +124,10 @@ export default function DashboardPage() {
                 <FileText className="mt-1 h-5 w-5 text-primary" />
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">Extend Library Hours During Exam Period</p>
+                    <p className="text-sm font-medium">Extend External Sessions During Regular Hours</p>
                     <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Created by you</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">45/100 signatures • 15 days remaining</p>
+                  <p className="text-sm text-muted-foreground">49/100 signatures • 15 days remaining</p>
                   <div className="w-full bg-muted rounded-full h-2 mt-2">
                     <div className="bg-primary h-2 rounded-full" style={{ width: "45%" }}></div>
                   </div>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
                 <FileText className="mt-1 h-5 w-5 text-primary" />
                 <div className="space-y-1 flex-1">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">More Vegetarian Options in Cafeteria</p>
+                    <p className="text-sm font-medium">More Options in Cafeteria</p>
                     <span className="text-xs bg-muted px-2 py-1 rounded-full">Signed</span>
                   </div>
                   <p className="text-sm text-muted-foreground">78/100 signatures • 5 days remaining</p>

@@ -99,8 +99,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="rounded-full bg-primary p-1">
               <PieChart className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="hidden md:inline">Student E-Governance</span>
-            <span className="md:hidden">E-Gov</span>
+            <span className="hidden md:inline">VoicEd</span>
+            <span className="md:hidden">VoicEd</span>
           </div>
           <nav className="mx-6 hidden md:flex md:items-center md:gap-6 lg:gap-8">
             {navigation.map((item) => {

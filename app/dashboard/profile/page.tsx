@@ -31,15 +31,15 @@ export default function ProfilePage() {
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [profileData, setProfileData] = useState({
-    firstName: "Mark",
-    lastName: "Smith",
-    email: "m.smith@university.edu",
-    studentId: "S12345678",
+    firstName: "Rayan",
+    lastName: "Karki",
+    email: "022bscit034@sxc.edu.np",
+    studentId: "022BSCIT034",
     department: "Computer Science",
     year: "3rd Year",
     bio: "Computer Science student interested in AI and web development. Active member of the coding club and environmental initiatives on campus.",
-    phone: "+1 (555) 123-4567",
-    address: "123 University Housing, Building B, Room 456",
+    phone: "+977 9863481416",
+    address: "Newroad, Kathmandu",
   })
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -52,8 +52,8 @@ export default function ProfilePage() {
   })
 
   const recentActivity = [
-    { type: "petition", action: "signed", title: "More Vegetarian Options in Cafeteria", date: "2 days ago" },
-    { type: "forum", action: "posted", title: "Ideas for Campus Sustainability", date: "4 days ago" },
+    { type: "petition", action: "signed", title: "More Options in Cafeteria", date: "2 days ago" },
+    { type: "forum", action: "posted", title: "Ideas for Open Source Community", date: "4 days ago" },
     { type: "survey", action: "completed", title: "Campus Dining Options", date: "1 week ago" },
     { type: "vote", action: "participated", title: "Student Council Elections", date: "2 weeks ago" },
   ]
