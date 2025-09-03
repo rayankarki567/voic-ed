@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { useAuth } from "@/lib/supabase-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -22,46 +22,73 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const { toast } = useToast()
 
+  const { signIn, signInWithGoogle, user } = useAuth()
+
+  useEffect(() => {
+    // Handle OAuth errors from callback
+    const error = searchParams.get('error')
+    if (error) {
+      setIsLoading(false)
+      const decodedError = decodeURIComponent(error)
+      console.error('Login error from callback:', decodedError)
+      
+      // Show user-friendly error message
+      let userMessage = 'Authentication failed. Please try again.'
+      if (decodedError.includes('sxc.edu.np')) {
+        userMessage = 'Only sxc.edu.np emails are allowed. Please use your institutional email.'
+      } else if (decodedError.includes('verify')) {
+        userMessage = 'Please verify your email with Google first.'
+      } else if (decodedError.includes('domain')) {
+        userMessage = 'This email domain is not allowed. Please contact support.'
+      }
+      
+      toast({
+        title: "Sign In Error",
+        description: userMessage,
+        variant: "destructive",
+      })
+
+      // Clear the error from URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    // Redirect if already logged in
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router, searchParams, toast])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        toast({
-          title: "Authentication Error",
-          description: "Invalid credentials. Please try again.",
-          variant: "destructive",
-        })
-        setIsLoading(false)
-      } else {
-        router.push(callbackUrl)
-      }
+      await signIn(email, password)
+      router.push('/dashboard')
     } catch (error) {
       toast({
         title: "Authentication Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: error instanceof Error ? error.message : "Invalid credentials. Please try again.",
         variant: "destructive",
       })
       setIsLoading(false)
     }
   }
 
-  const handleSSOLogin = async (provider: string) => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true)
     try {
-      await signIn(provider, { callbackUrl })
-    } catch (error) {
+      console.log('Initiating Google sign-in...')
+      await signInWithGoogle()
+      // Success case handled by auth callback redirect
+    } catch (error: any) {
+      console.error('Unexpected Google sign-in error:', error)
       setIsLoading(false)
       toast({
         title: "Authentication Error",
-        description: "Failed to connect to authentication provider.",
+        description: error?.message || "Failed to connect to authentication provider.",
         variant: "destructive",
       })
     }
@@ -85,18 +112,7 @@ export default function LoginPage() {
               type="button"
               variant="outline"
               className="w-full flex items-center justify-center gap-2"
-              onClick={() => handleSSOLogin("azure-ad")}
-              disabled={isLoading}
-            >
-              <School className="h-5 w-5" />
-              Sign in with Institutional SSO
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2"
-              onClick={() => handleSSOLogin("google")}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -171,6 +187,11 @@ export default function LoginPage() {
             <Link href="/register" className="text-primary underline-offset-4 hover:underline">
               Sign up
             </Link>
+          </div>
+          <div className="text-xs text-center text-muted-foreground mt-4 p-2 bg-yellow-50 rounded border border-yellow-200">
+            <p className="font-medium text-yellow-800">Development Mode</p>
+            <p className="text-yellow-700">Domain restriction temporarily disabled for testing</p>
+            <p className="text-yellow-700">Production: Only @sxc.edu.np emails will be allowed</p>
           </div>
         </CardFooter>
       </Card>

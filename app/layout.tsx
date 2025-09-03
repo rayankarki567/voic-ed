@@ -3,6 +3,8 @@ import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import type { Metadata } from "next"
 import { Toaster } from "@/components/toaster"
+import { AuthProvider } from "@/lib/supabase-auth"
+import { PerformanceMonitor } from "@/components/performance-monitor"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -19,8 +21,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        {children}
-        <Toaster />
+        <PerformanceMonitor>
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+        </PerformanceMonitor>
       </body>
     </html>
   )

@@ -1,119 +1,140 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FileText, Plus, Search } from "lucide-react"
 import { PetitionCard } from "./_components/petition-card"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import type { Database } from '@/types/database.types'
+
+type Petition = Database['public']['Tables']['petitions']['Row'] & {
+  profiles: {
+    first_name: string | null
+    last_name: string | null
+    student_id: string | null
+  } | null
+  signature_count?: number
+}
 
 export default function PetitionsPage() {
   const [searchQuery, setSearchQuery] = useState("")
+  const [petitions, setPetitions] = useState<Petition[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const supabase = createClientComponentClient<Database>()
 
-  const activePetitions = [
-    {
-      id: 1,
-      title: "Extend Library Hours During Exam Period",
-      description:
-        "We request the university to extend library hours to 24/7 during the final exam period to accommodate students' study needs.",
-      creator: "Mark Smith",
-      isCreatedByUser: true,
-      signatures: 45,
-      goal: 100,
-      daysRemaining: 15,
-      category: "Academic",
-      createdAt: "May 5, 2025",
-      status: "Under Review",
-      lastUpdated: "May 10, 2025",
-    },
-    {
-      id: 2,
-      title: "More Vegetarian Options in Cafeteria",
-      description:
-        "We need more diverse vegetarian and vegan options in the campus cafeteria to accommodate dietary preferences.",
-      creator: "Jane Doe",
-      isCreatedByUser: false,
-      signatures: 78,
-      goal: 100,
-      daysRemaining: 5,
-      category: "Campus Life",
-      createdAt: "May 1, 2025",
-      escalated: true,
-      escalationReason: "No faculty response after 7 days",
-      lastUpdated: "May 8, 2025",
-    },
-    {
-      id: 3,
-      title: "Improve Campus Wi-Fi Coverage",
-      description:
-        "Many areas on campus have poor Wi-Fi coverage. We petition for improved infrastructure to support student learning.",
-      creator: "Alex Johnson",
-      isCreatedByUser: false,
-      signatures: 120,
-      goal: 150,
-      daysRemaining: 10,
-      category: "Infrastructure",
-      createdAt: "April 28, 2025",
-      lastUpdated: "May 9, 2025",
-    },
-    {
-      id: 4,
-      title: "Add More Bike Racks on Campus",
-      description:
-        "With the increasing number of students using bikes, we need more secure bike racks around campus buildings.",
-      creator: "Sam Wilson",
-      isCreatedByUser: false,
-      signatures: 65,
-      goal: 100,
-      daysRemaining: 20,
-      category: "Infrastructure",
-      createdAt: "May 3, 2025",
-      lastUpdated: "May 11, 2025",
-    },
-  ]
+  useEffect(() => {
+    // Load data from database now that it has been seeded
+    fetchPetitions()
+  }, [])
 
-  const successfulPetitions = [
-    {
-      id: 5,
-      title: "Install Water Bottle Refill Stations",
-      description:
-        "Successfully petitioned for water bottle refill stations to be installed across campus to reduce plastic waste.",
-      creator: "Environmental Club",
-      signatures: 230,
-      goal: 200,
-      category: "Sustainability",
-      status: "Approved",
-      createdAt: "March 15, 2025",
-      lastUpdated: "April 30, 2025",
-    },
-    {
-      id: 6,
-      title: "Extended Gym Hours on Weekends",
-      description: "The campus gym will now be open until 10 PM on weekends based on student feedback.",
-      creator: "Student Athletics Association",
-      signatures: 185,
-      goal: 150,
-      category: "Campus Life",
-      status: "Approved",
-      createdAt: "April 1, 2025",
-      lastUpdated: "April 20, 2025",
-    },
-  ]
+  async function fetchPetitions() {
+    try {
+      setLoading(true)
+      
+      // First, try to get just the petitions without joins to debug
+      const { data: petitionsData, error: petitionsError } = await supabase
+        .from('petitions')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-  const filteredActivePetitions = activePetitions.filter(
-    (petition) =>
-      petition.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      petition.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      petition.category.toLowerCase().includes(searchQuery.toLowerCase()),
+      if (petitionsError) {
+        console.error('Petitions query error:', petitionsError)
+        throw petitionsError
+      }
+
+      console.log('Petitions data:', petitionsData)
+
+      // If petitions fetch works, try to get profiles separately
+      if (petitionsData && petitionsData.length > 0) {
+        const userIds = petitionsData.map(p => p.user_id).filter(Boolean)
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, student_id')
+          .in('user_id', userIds)
+
+        if (profilesError) {
+          console.error('Profiles query error:', profilesError)
+        }
+
+        console.log('Profiles data:', profilesData)
+
+        // Get signature counts
+        const petitionIds = petitionsData.map(p => p.id)
+        const { data: signatureCounts, error: signaturesError } = await supabase
+          .from('petition_signatures')
+          .select('petition_id')
+          .in('petition_id', petitionIds)
+
+        if (signaturesError) {
+          console.error('Signatures query error:', signaturesError)
+        }
+
+        console.log('Signature counts:', signatureCounts)
+
+        // Count signatures per petition
+        const signatureCountMap = signatureCounts?.reduce((acc, sig) => {
+          acc[sig.petition_id] = (acc[sig.petition_id] || 0) + 1
+          return acc
+        }, {} as Record<string, number>) || {}
+
+        // Create profiles map
+        const profilesMap = profilesData?.reduce((acc, profile) => {
+          acc[profile.user_id] = profile
+          return acc
+        }, {} as Record<string, any>) || {}
+
+        // Combine data
+        const petitionsWithCounts = petitionsData.map(petition => ({
+          ...petition,
+          signature_count: signatureCountMap[petition.id] || 0,
+          profiles: petition.user_id ? profilesMap[petition.user_id] || null : null
+        }))
+
+        setPetitions(petitionsWithCounts)
+      } else {
+        setPetitions([])
+      }
+    } catch (error: any) {
+      console.error('Error fetching petitions:', error)
+      setError(error?.message || 'Unknown error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredPetitions = petitions.filter(petition =>
+    petition.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    petition.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredSuccessfulPetitions = successfulPetitions.filter(
-    (petition) =>
-      petition.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      petition.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      petition.category.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const activePetitions = filteredPetitions.filter(p => p.status === 'active')
+  const successfulPetitions = filteredPetitions.filter(p => p.status === 'completed')
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading petitions...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center text-red-600">
+          <p>Error loading petitions: {error}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -149,9 +170,9 @@ export default function PetitionsPage() {
           <TabsTrigger value="your">Your Petitions</TabsTrigger>
         </TabsList>
         <TabsContent value="active" className="space-y-4">
-          {filteredActivePetitions.length > 0 ? (
+          {activePetitions.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              {filteredActivePetitions.map((petition) => (
+              {activePetitions.map((petition) => (
                 <PetitionCard key={petition.id} petition={petition} />
               ))}
             </div>
@@ -164,9 +185,9 @@ export default function PetitionsPage() {
           )}
         </TabsContent>
         <TabsContent value="successful" className="space-y-4">
-          {filteredSuccessfulPetitions.length > 0 ? (
+          {successfulPetitions.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
-              {filteredSuccessfulPetitions.map((petition) => (
+              {successfulPetitions.map((petition) => (
                 <PetitionCard key={petition.id} petition={petition} />
               ))}
             </div>
@@ -180,8 +201,8 @@ export default function PetitionsPage() {
         </TabsContent>
         <TabsContent value="your" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {activePetitions
-              .filter((petition) => petition.isCreatedByUser)
+            {petitions
+              .filter((petition) => petition.user_id === petition.user_id) // TODO: Compare with current user ID
               .map((petition) => (
                 <PetitionCard key={petition.id} petition={petition} />
               ))}

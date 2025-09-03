@@ -1,46 +1,199 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/lib/supabase-auth'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/components/ui/use-toast'
+import { Bell, Calendar, CheckCircle2, Edit, FileText, Lock, Mail, MessageSquare, PieChart, School, Vote } from 'lucide-react'
+import { PrivacySettings } from '@/components/privacy-settings'
+import { NotificationSettings } from '@/components/notification-settings'
+import { ChangePassword } from '@/components/change-password'
 import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import {
-  FileText,
-  MessageSquare,
-  PieChart,
-  Vote,
-  Bell,
-  Lock,
-  Mail,
-  School,
-  Calendar,
-  Edit,
-  CheckCircle2,
-} from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+import type { UserProfile, ProfileFormData } from '@/types/profile'
+import { z } from 'zod'
+
+const mapProfileToFormData = (profile: any, email: string): ProfileFormData => ({
+  firstName: profile?.first_name || '',
+  lastName: profile?.last_name || '',
+  email: email || '',
+  studentId: profile?.student_id || '',
+  department: profile?.department || '',
+  year: profile?.year || '',
+  bio: profile?.bio || '',
+  phone: profile?.phone || '',
+  address: profile?.address || '',
+})
 
 export default function ProfilePage() {
+  const { user, profile, security, refreshSession } = useAuth()
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
-  const [profileData, setProfileData] = useState({
-    firstName: "Rayan",
-    lastName: "Karki",
-    email: "022bscit034@sxc.edu.np",
-    studentId: "022BSCIT034",
-    department: "Computer Science",
-    year: "3rd Year",
-    bio: "Computer Science student interested in AI and web development. Active member of the coding club and environmental initiatives on campus.",
-    phone: "+977 9863481416",
-    address: "Newroad, Kathmandu",
+  const [isLoading, setIsLoading] = useState(false)
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false)
+  const supabase = createClientComponentClient()
+  
+  const [profileData, setProfileData] = useState<ProfileFormData>(() => {
+    console.log("Initial profile data:", profile)
+    return mapProfileToFormData(profile, user?.email || '')
   })
+
+  // Check if we need to create a profile for new users (especially Google OAuth)
+  useEffect(() => {
+    const createProfileForNewUser = async () => {
+      if (user && !profile && !isCreatingProfile) {
+        setIsCreatingProfile(true)
+        
+        try {
+          // Extract name from user metadata (Google OAuth provides this)
+          const fullName = user.user_metadata?.full_name || user.user_metadata?.name || ''
+          const firstName = user.user_metadata?.given_name || fullName.split(' ')[0] || ''
+          const lastName = user.user_metadata?.family_name || fullName.split(' ').slice(1).join(' ') || ''
+          const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null
+
+          console.log('Creating profile for new user:', {
+            userId: user.id,
+            email: user.email,
+            firstName,
+            lastName,
+            avatarUrl,
+            userMetadata: user.user_metadata
+          })
+
+          console.log('Testing auth status before insert...')
+          const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser()
+          
+          if (authError) {
+            console.error('Auth error:', authError)
+            throw new Error(`Authentication error: ${authError.message}`)
+          }
+          
+          if (!currentUser) {
+            throw new Error('No authenticated user found')
+          }
+          
+          console.log('Current authenticated user:', currentUser.id)
+
+          // Try a simple insert first
+          console.log('Attempting to insert profile...')
+          const profileData = {
+            user_id: user.id,
+            first_name: firstName || 'User',
+            last_name: lastName || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          
+          console.log('Profile data to insert:', profileData)
+
+          const { data: insertedProfile, error: profileError } = await supabase
+            .from('profiles')
+            .insert(profileData)
+            .select()
+
+          if (profileError) {
+            console.error('Error creating profile:', profileError)
+            console.error('Profile error details:', {
+              code: profileError.code,
+              message: profileError.message,
+              details: profileError.details,
+              hint: profileError.hint,
+              fullError: JSON.stringify(profileError, null, 2)
+            })
+            
+            // Try to get more information about the error
+            if (profileError.code) {
+              console.error(`Database error code: ${profileError.code}`)
+            }
+            
+            throw new Error(`Profile creation failed: ${profileError.message || profileError.code || 'Unknown database error'}`)
+          }
+
+          console.log('Profile created successfully:', insertedProfile)
+
+          // Create security settings (optional - don't fail if this doesn't work)
+          console.log('Attempting to create security settings...')
+          const securityData = {
+            user_id: user.id,
+            two_factor_enabled: false,
+            failed_login_attempts: 0,
+            profile_visibility: 'public',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+          
+          console.log('Security data to insert:', securityData)
+          
+          const { data: insertedSecurity, error: securityError } = await supabase
+            .from('security_settings')
+            .insert(securityData)
+            .select()
+
+          if (securityError) {
+            console.error('Error creating security settings:', securityError)
+            console.error('Security error details:', {
+              code: securityError.code,
+              message: securityError.message,
+              details: securityError.details,
+              hint: securityError.hint,
+              fullError: JSON.stringify(securityError, null, 2)
+            })
+            // Don't throw here, profile creation is more important
+            console.warn('Security settings creation failed, but continuing with profile setup')
+          } else {
+            console.log('Security settings created successfully:', insertedSecurity)
+          }
+
+          // Refresh the session to get the new profile data
+          await refreshSession()
+          
+          toast({
+            title: "Welcome!",
+            description: "Your profile has been created. Please complete your information.",
+            duration: 5000,
+          })
+          
+          setIsEditing(true) // Start in edit mode for new users
+        } catch (error: any) {
+          console.error('Failed to create profile:', error)
+          console.error('Error details:', {
+            name: error?.name,
+            message: error?.message,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+            stack: error?.stack
+          })
+          
+          const errorMessage = error?.message || 'Unknown error occurred during profile creation'
+          
+          toast({
+            title: "Profile Creation Error",
+            description: `Failed to create your profile: ${errorMessage}. Please check the browser console and try refreshing the page.`,
+            variant: "destructive",
+          })
+        } finally {
+          setIsCreatingProfile(false)
+        }
+      }
+    }
+
+    createProfileForNewUser()
+  }, [user, profile, isCreatingProfile, refreshSession, supabase, toast])
+
+  // Update profileData when profile changes
+  useEffect(() => {
+    if (profile) {
+      setProfileData(mapProfileToFormData(profile, user?.email || ''))
+    }
+  }, [profile, user?.email])
 
   const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
@@ -58,20 +211,94 @@ export default function ProfilePage() {
     { type: "vote", action: "participated", title: "Student Council Elections", date: "2 weeks ago" },
   ]
 
+  const validateStudentId = (studentId: string): boolean => {
+    // Student ID format: 202CS001 (3 digits + letters + 3 digits)
+    const studentIdRegex = /^[0-9]{3}[A-Za-z]+[0-9]{3}$/
+    return studentId === '' || studentIdRegex.test(studentId)
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setProfileData((prev) => ({
+    setProfileData((prev: ProfileFormData) => ({
       ...prev,
       [name]: value,
     }))
   }
 
-  const handleSaveProfile = () => {
-    setIsEditing(false)
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been updated successfully.",
-    })
+  const handleSaveProfile = async () => {
+    if (!user) {
+      console.error("No user found")
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to update your profile.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    // Validate student ID format if provided
+    if (profileData.studentId && !validateStudentId(profileData.studentId)) {
+      toast({
+        title: "Invalid Student ID",
+        description: "Student ID must be in format: 3 digits + letters + 3 digits (e.g., 202CS001)",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsLoading(true)
+    console.log("Saving profile data:", profileData)
+    
+    try {
+      const updateData: any = {
+        first_name: profileData.firstName.trim(),
+        last_name: profileData.lastName.trim(),
+        department: profileData.department.trim(),
+        year: profileData.year,
+        bio: profileData.bio.trim(),
+        phone: profileData.phone.trim(),
+        address: profileData.address.trim(),
+        updated_at: new Date().toISOString()
+      }
+
+      // Only include student_id if it's provided and valid
+      if (profileData.studentId) {
+        updateData.student_id = profileData.studentId.trim().toUpperCase()
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error("Supabase error:", error)
+        
+        // Handle specific database errors
+        if (error.code === '23505' && error.message.includes('student_id')) {
+          throw new Error('This student ID is already in use. Please use a different one.')
+        }
+        
+        throw error
+      }
+
+      console.log("Profile updated successfully")
+      await refreshSession()
+      setIsEditing(false)
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been updated successfully.",
+      })
+    } catch (error: any) {
+      console.error("Error saving profile:", error)
+      toast({
+        title: "Error",
+        description: error.message || "There was an error updating your profile. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleToggleNotification = (setting: string, checked: boolean) => {
@@ -101,11 +328,48 @@ export default function ProfilePage() {
     }
   }
 
+  if (isCreatingProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <h3 className="text-lg font-medium">Setting up your profile...</h3>
+          <p className="text-muted-foreground">
+            We're creating your profile based on your account information.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <h3 className="text-lg font-medium">Authentication Required</h3>
+          <p className="text-muted-foreground">Please log in to view your profile.</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Extract initials for avatar
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'U'
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Your Profile</h2>
-        <p className="text-muted-foreground">Manage your personal information and preferences</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Your Profile</h2>
+          <p className="text-muted-foreground">Manage your personal information and preferences</p>
+        </div>
+        {!profile && (
+          <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+            Profile Incomplete
+          </Badge>
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -113,36 +377,63 @@ export default function ProfilePage() {
           <CardHeader className="text-center">
             <div className="flex justify-center mb-4">
               <Avatar className="h-24 w-24">
-                <AvatarImage src="/placeholder.svg?height=96&width=96" alt="Mark Smith" />
-                <AvatarFallback className="text-2xl">MS</AvatarFallback>
+                <AvatarImage 
+                  src={user?.user_metadata?.avatar_url || user?.user_metadata?.picture} 
+                  alt={`${profileData.firstName} ${profileData.lastName}`} 
+                />
+                <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                  {getInitials(profileData.firstName, profileData.lastName)}
+                </AvatarFallback>
               </Avatar>
             </div>
-            <CardTitle>
-              {profileData.firstName} {profileData.lastName}
+            <CardTitle className="text-xl">
+              {profileData.firstName || profileData.lastName ? 
+                `${profileData.firstName} ${profileData.lastName}`.trim() : 
+                'Complete Your Profile'
+              }
             </CardTitle>
-            <CardDescription>{profileData.email}</CardDescription>
+            <CardDescription className="flex items-center gap-1 justify-center">
+              <Mail className="h-4 w-4" />
+              {profileData.email}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-center gap-2">
-              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-0">Student</Badge>
-              <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-0">
-                {profileData.department}
+              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border-0">
+                {user?.user_metadata?.role || 'Student'}
               </Badge>
+              {profileData.department && (
+                <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-0">
+                  {profileData.department}
+                </Badge>
+              )}
             </div>
 
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <School className="h-4 w-4 text-muted-foreground" />
-                <span>{profileData.year}</span>
+            {(profileData.year || profileData.studentId) && (
+              <div className="space-y-2 text-sm">
+                {profileData.studentId && (
+                  <div className="flex items-center gap-2">
+                    <School className="h-4 w-4 text-muted-foreground" />
+                    <span>ID: {profileData.studentId}</span>
+                  </div>
+                )}
+                {profileData.year && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Year {profileData.year}</span>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>Joined September 2023</span>
-              </div>
-            </div>
+            )}
 
             <div className="pt-2">
-              <p className="text-sm text-muted-foreground">{profileData.bio}</p>
+              {profileData.bio ? (
+                <p className="text-sm text-muted-foreground">{profileData.bio}</p>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  Add a bio to tell others about yourself
+                </p>
+              )}
             </div>
           </CardContent>
           <CardFooter>
@@ -232,25 +523,70 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="studentId">Student ID</Label>
-                      <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50">
-                        {profileData.studentId}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department</Label>
                       {isEditing ? (
-                        <Input
-                          id="department"
-                          name="department"
-                          value={profileData.department}
-                          onChange={handleInputChange}
-                        />
+                        <div className="space-y-1">
+                          <Input
+                            id="studentId"
+                            name="studentId"
+                            value={profileData.studentId}
+                            onChange={handleInputChange}
+                            placeholder="e.g., 202CS001"
+                            className={!validateStudentId(profileData.studentId) ? "border-destructive" : ""}
+                          />
+                          {profileData.studentId && !validateStudentId(profileData.studentId) && (
+                            <p className="text-sm text-destructive">
+                              Format: 3 digits + letters + 3 digits (e.g., 202CS001)
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Format: Year + Department code + Number (e.g., 202CS001)
+                          </p>
+                        </div>
                       ) : (
                         <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50">
-                          {profileData.department}
+                          {profileData.studentId || (
+                            <span className="text-muted-foreground italic">Not provided</span>
+                          )}
                         </div>
                       )}
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="year">Year</Label>
+                      {isEditing ? (
+                        <Input
+                          id="year"
+                          name="year"
+                          value={profileData.year}
+                          onChange={handleInputChange}
+                          placeholder="e.g., 2, 3, 4"
+                        />
+                      ) : (
+                        <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50">
+                          {profileData.year || (
+                            <span className="text-muted-foreground italic">Not provided</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    {isEditing ? (
+                      <Input
+                        id="department"
+                        name="department"
+                        value={profileData.department}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Computer Science, Business Administration"
+                      />
+                    ) : (
+                      <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50">
+                        {profileData.department || (
+                          <span className="text-muted-foreground italic">Not provided</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -292,8 +628,22 @@ export default function ProfilePage() {
                 </CardContent>
                 {isEditing && (
                   <CardFooter>
-                    <Button onClick={handleSaveProfile} className="ml-auto">
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Save Changes
+                    <Button 
+                      onClick={handleSaveProfile} 
+                      className="ml-auto min-w-[120px]"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Save Changes
+                        </>
+                      )}
                     </Button>
                   </CardFooter>
                 )}
