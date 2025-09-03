@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '@/types/database.types'
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_URL')
@@ -8,19 +7,9 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
   throw new Error('Missing env.NEXT_PUBLIC_SUPABASE_ANON_KEY')
 }
 
-export const supabase = createClient<Database>(
+export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    },
-    db: {
-      schema: 'public'
-    }
-  }
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 )
 
 // Helper function to handle database errors
@@ -39,9 +28,10 @@ export const checkPermissions = async (userId: string, requiredRole: string) => 
 
   if (error) {
     handleError(error)
+    return false
   }
 
-  return data?.role === requiredRole
+  return (data as any)?.role === requiredRole
 }
 
 // Type-safe database queries
@@ -57,7 +47,7 @@ export const db = {
       if (error) handleError(error)
       return data
     },
-    update: async (userId: string, profile: Database['public']['Tables']['profiles']['Update']) => {
+    update: async (userId: string, profile: any) => {
       const { data, error } = await supabase
         .from('profiles')
         .update(profile)
@@ -89,10 +79,10 @@ export const db = {
       if (error) handleError(error)
       return data
     },
-    create: async (petition: Database['public']['Tables']['petitions']['Insert']) => {
+    create: async (petition: any) => {
       const { data, error } = await supabase
         .from('petitions')
-        .insert(petition)
+        .insert(petition as any)
         .select()
         .single()
 
@@ -120,10 +110,10 @@ export const db = {
       if (error) handleError(error)
       return data
     },
-    create: async (survey: Database['public']['Tables']['surveys']['Insert']) => {
+    create: async (survey: any) => {
       const { data, error } = await supabase
         .from('surveys')
-        .insert(survey)
+        .insert(survey as any)
         .select()
         .single()
 

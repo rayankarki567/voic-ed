@@ -19,6 +19,9 @@ export class SessionManager {
     
     const now = Math.floor(Date.now() / 1000)
     const expiresAt = session.expires_at
+    
+    if (!expiresAt) return session // If no expiry time, assume valid
+    
     const timeLeft = expiresAt - now
     
     // If session is expired, sign out

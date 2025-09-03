@@ -25,7 +25,7 @@ export default function AuthDebugPage() {
         addLog(`Session check: ${session ? 'Found session' : 'No session'} ${sessionError ? `Error: ${sessionError.message}` : ''}`)
         
         if (session?.user) {
-          setDebugInfo(prev => ({
+          setDebugInfo((prev: any) => ({
             ...prev,
             session: {
               userId: session.user.id,
@@ -46,10 +46,10 @@ export default function AuthDebugPage() {
 
           if (profileError) {
             addLog(`Profile fetch error: ${profileError.message}`)
-            setDebugInfo(prev => ({ ...prev, profileError: profileError.message }))
+            setDebugInfo((prev: any) => ({ ...prev, profileError: profileError.message }))
           } else {
             addLog('Profile found successfully')
-            setDebugInfo(prev => ({ ...prev, profile }))
+            setDebugInfo((prev: any) => ({ ...prev, profile }))
           }
 
           // Test database connection
@@ -61,15 +61,15 @@ export default function AuthDebugPage() {
 
           if (testError) {
             addLog(`Database test error: ${testError.message}`)
-            setDebugInfo(prev => ({ ...prev, dbError: testError.message }))
+            setDebugInfo((prev: any) => ({ ...prev, dbError: testError.message }))
           } else {
             addLog('Database connection successful')
-            setDebugInfo(prev => ({ ...prev, dbConnected: true }))
+            setDebugInfo((prev: any) => ({ ...prev, dbConnected: true }))
           }
         }
       } catch (error: any) {
         addLog(`Unexpected error: ${error.message}`)
-        setDebugInfo(prev => ({ ...prev, unexpectedError: error.message }))
+        setDebugInfo((prev: any) => ({ ...prev, unexpectedError: error.message }))
       }
     }
 
@@ -121,7 +121,7 @@ export default function AuthDebugPage() {
         addLog(`Profile creation error: ${error.message}`)
       } else {
         addLog('Profile creation successful')
-        setDebugInfo(prev => ({ ...prev, createdProfile: data }))
+        setDebugInfo((prev: any) => ({ ...prev, createdProfile: data }))
       }
     } catch (error: any) {
       addLog(`Profile creation unexpected error: ${error.message}`)

@@ -3,14 +3,21 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 30; // seconds (max for Hobby plan)
+export const dynamic = 'force-dynamic';
+
+
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
+    const { id } = await params
     const supabase = createRouteHandlerClient<Database>({ cookies })
     
     const { data: poll, error } = await supabase
@@ -23,7 +30,7 @@ export async function GET(request: Request, { params }: RouteParams) {
           user_id
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) throw error
@@ -49,6 +56,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
 export async function POST(request: Request, { params }: RouteParams) {
   try {
+    const { id } = await params
     const supabase = createRouteHandlerClient<Database>({ cookies })
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -63,7 +71,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { data: existingVote } = await supabase
       .from('votes')
       .select('id')
-      .eq('poll_id', params.id)
+      .eq('poll_id', id)
       .eq('user_id', session.user.id)
       .single()
 
@@ -77,7 +85,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { data: vote, error } = await supabase
       .from('votes')
       .insert({
-        poll_id: params.id,
+        poll_id: id,
         user_id: session.user.id,
         option_index
       })

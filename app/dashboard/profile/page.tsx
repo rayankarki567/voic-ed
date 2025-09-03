@@ -33,7 +33,7 @@ const mapProfileToFormData = (profile: any, email: string): ProfileFormData => (
 })
 
 export default function ProfilePage() {
-  const { user, profile, security, refreshSession } = useAuth()
+  const { user, profile, refreshSession } = useAuth()
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(false)

@@ -3,14 +3,21 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/supabase'
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 30; // seconds (max for Hobby plan)
+export const dynamic = 'force-dynamic';
+
+
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
+    const { id } = await params
     const supabase = createRouteHandlerClient<Database>({ cookies })
     
     const { data: posts, error } = await supabase
@@ -31,7 +38,7 @@ export async function GET(request: Request, { params }: RouteParams) {
           )
         )
       `)
-      .eq('topic_id', params.id)
+      .eq('topic_id', id)
       .order('created_at', { ascending: true })
 
     if (error) throw error
@@ -47,6 +54,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
 export async function POST(request: Request, { params }: RouteParams) {
   try {
+    const { id } = await params
     const supabase = createRouteHandlerClient<Database>({ cookies })
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -60,7 +68,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { data: post, error } = await supabase
       .from('forum_posts')
       .insert({
-        topic_id: params.id,
+        topic_id: id,
         content,
         author_id: session.user.id
       })
@@ -80,7 +88,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     await supabase
       .from('forum_topics')
       .update({ updated_at: new Date().toISOString() })
-      .eq('id', params.id)
+      .eq('id', id)
 
     return NextResponse.json(post)
   } catch (error: any) {

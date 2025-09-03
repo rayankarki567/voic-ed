@@ -128,7 +128,7 @@ export default function SurveyDetailPage() {
   const isQuestionAnswered = (questionId: string) => {
     const question = survey.questions.find((q) => q.id === questionId)
 
-    if (!question.required) return true
+    if (!question || !question.required) return true
 
     if (question.type === "radio") {
       return !!answers[questionId]
@@ -218,7 +218,7 @@ export default function SurveyDetailPage() {
           {currentQuestion.type === "checkbox" && <CardDescription>Select all that apply</CardDescription>}
         </CardHeader>
         <CardContent>
-          {currentQuestion.type === "radio" && (
+          {currentQuestion.type === "radio" && currentQuestion.options && (
             <RadioGroup
               value={answers[currentQuestion.id] || ""}
               onValueChange={(value) => handleRadioChange(currentQuestion.id, value)}
@@ -232,7 +232,7 @@ export default function SurveyDetailPage() {
             </RadioGroup>
           )}
 
-          {currentQuestion.type === "checkbox" && (
+          {currentQuestion.type === "checkbox" && currentQuestion.options && (
             <div className="space-y-4">
               {currentQuestion.options.map((option) => (
                 <div key={option.id} className="flex items-center space-x-2">

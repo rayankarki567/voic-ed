@@ -4,6 +4,12 @@ import { NextResponse } from 'next/server'
 import { authenticator } from 'otplib'
 import QRCode from 'qrcode'
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 30; // seconds (max for Hobby plan)
+export const dynamic = 'force-dynamic';
+
+
 export async function POST(request: Request) {
   const supabase = createRouteHandlerClient({ cookies })
   const { data: { session } } = await supabase.auth.getSession()

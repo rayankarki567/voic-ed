@@ -2,6 +2,12 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 30; // seconds (max for Hobby plan)
+export const dynamic = 'force-dynamic';
+
+
 export async function POST(request: Request) {
   const requestUrl = new URL(request.url)
   const formData = await request.json()

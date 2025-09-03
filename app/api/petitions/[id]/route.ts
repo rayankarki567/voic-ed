@@ -3,14 +3,25 @@ import { db } from '@/lib/supabase-db'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 
+// Vercel deployment configuration
+export const runtime = 'nodejs'
+export const maxDuration = 30
+
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const petition = await db.petitions.get(params.id)
+    const { id } = await params
+    const supabase = createRouteHandlerClient({ cookies })
     
-    if (!petition) {
+    const { data: petition, error } = await supabase
+      .from('petitions')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error || !petition) {
       return NextResponse.json(
         { error: 'Petition not found' },
         { status: 404 }
@@ -28,7 +39,7 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies })
   const { data: { session } } = await supabase.auth.getSession()
@@ -38,9 +49,16 @@ export async function PATCH(
   }
 
   try {
-    const petition = await db.petitions.get(params.id)
+    const { id } = await params
+    const supabase = createRouteHandlerClient({ cookies })
     
-    if (!petition) {
+    const { data: petition, error: fetchError } = await supabase
+      .from('petitions')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (fetchError || !petition) {
       return NextResponse.json(
         { error: 'Petition not found' },
         { status: 404 }
@@ -59,7 +77,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('petitions')
       .update(json)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -76,7 +94,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteHandlerClient({ cookies })
   const { data: { session } } = await supabase.auth.getSession()
@@ -86,9 +104,16 @@ export async function DELETE(
   }
 
   try {
-    const petition = await db.petitions.get(params.id)
+    const { id } = await params
+    const supabase = createRouteHandlerClient({ cookies })
     
-    if (!petition) {
+    const { data: petition, error: fetchError } = await supabase
+      .from('petitions')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (fetchError || !petition) {
       return NextResponse.json(
         { error: 'Petition not found' },
         { status: 404 }
@@ -106,7 +131,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('petitions')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) throw error
 

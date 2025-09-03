@@ -4,6 +4,12 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { createPetitionSchema } from '@/lib/validations/petition'
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 30; // seconds (max for Hobby plan)
+export const dynamic = 'force-dynamic';
+
+
 export async function GET() {
   try {
     const petitions = await db.petitions.list()

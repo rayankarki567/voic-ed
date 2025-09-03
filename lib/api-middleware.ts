@@ -47,7 +47,7 @@ export const withCache = (
     // Only cache GET requests
     if (req.method === 'GET') {
       const cached = await redis.get(cacheKey)
-      if (cached) {
+      if (cached && typeof cached === 'string') {
         return NextResponse.json(JSON.parse(cached))
       }
     }

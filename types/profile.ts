@@ -40,3 +40,15 @@ export interface UserProfile {
   security: SecuritySettings | null
   preferences: UserPreferences | null
 }
+
+export interface ProfileFormData {
+  firstName: string
+  lastName: string
+  email: string
+  studentId: string
+  department: string
+  year: string
+  bio: string
+  phone: string
+  address: string
+}

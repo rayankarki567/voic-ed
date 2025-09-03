@@ -29,7 +29,7 @@ export function useProfile() {
   useEffect(() => {
     if (user && profile) {
       setProfileData({
-        name: profile.name || '',
+        name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
         email: user.email || '',
         studentId: profile.student_id || '',
         department: profile.department || '',

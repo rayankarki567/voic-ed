@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server'
 
+// Vercel runtime configuration
+export const runtime = 'nodejs';
+export const maxDuration = 30; // seconds (max for Hobby plan)
+export const dynamic = 'force-dynamic';
+
+
 export async function GET() {
   const robots = `User-agent: *
 Allow: /

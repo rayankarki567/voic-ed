@@ -28,7 +28,13 @@
     "seed:petitions": "node scripts/seed-petitions.js",
     "check": "npm run type-check && npm run lint",
     "analyze": "ANALYZE=true npm run build",
-    "export": "next export"
+    "export": "next export",
+    "pre-deploy": "npm run check && npm run build",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "configure-vercel": "node scripts/configure-vercel-routes.js",
+    "build:analyze": "ANALYZE=true npm run build",
+    "health-check": "node scripts/health-check.js"
   },
   "dependencies": {
     "@auth/core": "^0.40.0",
@@ -101,6 +107,7 @@
     "@prisma/client": "^6.15.0",
     "@types/csurf": "^1.11.5",
     "@types/node": "^22",
+    "@types/nodemailer": "^7.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.2.2",
