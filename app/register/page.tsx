@@ -45,16 +45,16 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first-name">First name</Label>
-                  <Input id="first-name" placeholder="Mark" required />
+                  <Input id="first-name" placeholder="Srijal" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="last-name">Last name</Label>
-                  <Input id="last-name" placeholder="Smith" required />
+                  <Input id="last-name" placeholder="Sayami" required />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="m.smith@university.edu" required type="email" />
+                <Input id="email" placeholder="022bscit043@sxc.edu.np" required type="email" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="student-id">Student ID</Label>
