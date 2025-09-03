@@ -30,7 +30,6 @@ export default function Home() {
             <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
               VoicED
             </span>
-            <Badge variant="secondary" className="ml-2 text-xs">Beta</Badge>
           </div>
           <nav className="hidden md:flex gap-8">
             <Link href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105">

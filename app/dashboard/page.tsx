@@ -9,7 +9,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Welcome back, Rayan! Here's what's happening in your student community.</p>
+        <p className="text-muted-foreground">Welcome back! Here's what's happening in your student community.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

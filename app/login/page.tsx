@@ -153,7 +153,7 @@ export default function LoginPage() {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
-                  placeholder="m.smith@university.edu"
+                  placeholder="022bscit034@sxc.edu.np"
                   required
                   type="email"
                   value={email}
@@ -187,11 +187,6 @@ export default function LoginPage() {
             <Link href="/register" className="text-primary underline-offset-4 hover:underline">
               Sign up
             </Link>
-          </div>
-          <div className="text-xs text-center text-muted-foreground mt-4 p-2 bg-yellow-50 rounded border border-yellow-200">
-            <p className="font-medium text-yellow-800">Development Mode</p>
-            <p className="text-yellow-700">Domain restriction temporarily disabled for testing</p>
-            <p className="text-yellow-700">Production: Only @sxc.edu.np emails will be allowed</p>
           </div>
         </CardFooter>
       </Card>
