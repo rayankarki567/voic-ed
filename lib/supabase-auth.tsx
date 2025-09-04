@@ -5,6 +5,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
+import { getAuthCallbackUrl } from '@/lib/config'
+import { cleanAuthParams } from '@/lib/secure-auth'
 
 type Profile = {
   id: string
@@ -168,6 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
     })
     
+    // Clean URL parameters after sign in
+    if (!error) {
+      cleanAuthParams()
+    }
+    
     if (error) throw error
     return data
   }
@@ -176,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: getAuthCallbackUrl(),
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',
@@ -192,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: getAuthCallbackUrl(),
       },
     })
     
@@ -202,12 +209,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
+    // Clean any auth parameters from URL after sign out
+    cleanAuthParams()
   }
 
   const refreshSession = async () => {
     if (user?.id) {
       await fetchUserData(user.id)
     }
+    // Clean any auth parameters after refresh
+    cleanAuthParams()
   }
 
   const value = {

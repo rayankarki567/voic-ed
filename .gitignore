@@ -222,6 +222,12 @@ pids/
 *.sqlite3
 /prisma/dev.db
 
+# SQL files - keep database schema and queries private
+*.sql
+database*.sql
+migrations/
+schema/
+
 # test coverage
 coverage/
 .nyc_output/

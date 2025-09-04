@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/supabase-auth"
+import { cleanAuthParams } from "@/lib/secure-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -25,8 +26,13 @@ export default function LoginPage() {
   const { signIn, signInWithGoogle, user } = useAuth()
 
   useEffect(() => {
+    // Clean sensitive auth parameters from URL immediately
+    cleanAuthParams()
+
     // Handle OAuth errors from callback
     const error = searchParams.get('error')
+    const message = searchParams.get('message')
+    
     if (error) {
       setIsLoading(false)
       const decodedError = decodeURIComponent(error)
@@ -51,6 +57,24 @@ export default function LoginPage() {
       // Clear the error from URL
       const url = new URL(window.location.href)
       url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.toString())
+    }
+
+    // Handle success/info messages
+    if (message) {
+      const decodedMessage = decodeURIComponent(message)
+      console.log('Login message from callback:', decodedMessage)
+      
+      toast({
+        title: "Account Status",
+        description: decodedMessage,
+        variant: decodedMessage.includes('confirmed') || decodedMessage.includes('created') ? "default" : "default",
+        duration: 6000,
+      })
+
+      // Clear the message from URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('message')
       window.history.replaceState({}, '', url.toString())
     }
 

@@ -104,8 +104,10 @@ export async function middleware(req: NextRequest) {
     return setCsrfToken(req)
   }
 
-  // Validate CSRF token for unsafe methods to API endpoints
-  if (req.nextUrl.pathname.startsWith('/api') && requiresCsrfCheck(req)) {
+  // Validate CSRF token for unsafe methods to API endpoints (except auth endpoints)
+  if (req.nextUrl.pathname.startsWith('/api') && 
+      requiresCsrfCheck(req) && 
+      !req.nextUrl.pathname.includes('/api/auth/')) {
     return validateCsrfToken(req)
   }
 

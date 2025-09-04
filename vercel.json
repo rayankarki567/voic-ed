@@ -9,6 +9,9 @@
       "maxDuration": 30
     }
   },
+  "env": {
+    "NEXT_PUBLIC_APP_URL": "https://voic-ed.vercel.app"
+  },
   "headers": [
     {
       "source": "/(.*)",

@@ -12,6 +12,50 @@ export type ProfileVisibility = 'public' | 'students' | 'private'
 export interface Database {
   public: {
     Tables: {
+      users: {
+        Row: {
+          id: string
+          email: string
+          role: UserRole
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          role?: UserRole
+        }
+        Update: {
+          email?: string
+          role?: UserRole
+        }
+      }
+      user_preferences: {
+        Row: {
+          user_id: string
+          email_notifications: boolean
+          survey_reminders: boolean
+          petition_updates: boolean
+          forum_replies: boolean
+          voting_reminders: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          email_notifications?: boolean
+          survey_reminders?: boolean
+          petition_updates?: boolean
+          forum_replies?: boolean
+          voting_reminders?: boolean
+        }
+        Update: {
+          email_notifications?: boolean
+          survey_reminders?: boolean
+          petition_updates?: boolean
+          forum_replies?: boolean
+          voting_reminders?: boolean
+        }
+      }
       profiles: {
         Row: {
           id: string
@@ -25,7 +69,6 @@ export interface Database {
           phone: string | null
           address: string | null
           avatar_url: string | null
-          role: UserRole
           created_at: string
           updated_at: string
         }
