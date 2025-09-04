@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/supabase-auth"
@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { PieChart, School } from "lucide-react"
+import { PieChart, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
@@ -215,6 +215,37 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+// Loading fallback for login page
+function LoginPageFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-2">
+            <div className="rounded-full bg-primary p-2">
+              <PieChart className="h-6 w-6 text-primary-foreground" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl text-center">Loading...</CardTitle>
+          <CardDescription className="text-center">Please wait while we prepare the sign-in page</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Default export with Suspense wrapper
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   )
 }
 
