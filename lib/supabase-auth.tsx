@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
 import { getAuthCallbackUrl } from '@/lib/config'
 import { cleanAuthParams } from '@/lib/secure-auth'
+import { userCompletenessChecker } from '@/lib/user-completeness-checker'
 
 type Profile = {
   id: string
@@ -59,6 +60,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Fetching user data for:', userId)
       
+      // First, ensure user completeness (check/repair missing entries)
+      const completenessResult = await userCompletenessChecker.ensureUserCompleteness(false)
+      
+      if (completenessResult && completenessResult.action_taken !== 'complete') {
+        console.log('User entries were repaired:', completenessResult.action_taken)
+      }
+      
       // Set a timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Request timeout')), 10000) // 10 second timeout
@@ -82,18 +90,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         timeoutPromise
       ]) as any
 
-      // Handle profile data - it's okay if it doesn't exist yet
+      // Handle profile data
       if (profileResponse.error) {
-        console.warn('Profile not found:', profileResponse.error.message)
+        console.warn('Profile not found after completeness check:', profileResponse.error.message)
+        // Try to force repair if profile is still missing
+        await userCompletenessChecker.forceUserCompletenessCheck()
         setProfile(null)
       } else {
         console.log('Profile loaded:', profileResponse.data)
         setProfile(profileResponse.data)
       }
 
-      // Handle security settings - it's okay if they don't exist yet
+      // Handle security settings
       if (securityResponse.error) {
-        console.warn('Security settings not found:', securityResponse.error.message)
+        console.warn('Security settings not found after completeness check:', securityResponse.error.message)
         setSecuritySettings(null)
       } else {
         console.log('Security settings loaded:', securityResponse.data)
@@ -102,13 +112,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
     } catch (error) {
       console.error('Error fetching user data:', error)
-      // Don't throw - just set defaults and continue
+      // Try force completeness check as last resort
+      try {
+        await userCompletenessChecker.forceUserCompletenessCheck()
+      } catch (repairError) {
+        console.error('Failed to repair user completeness:', repairError)
+      }
+      // Set defaults and continue
       setProfile(null)
       setSecuritySettings(null)
     }
   }
 
   useEffect(() => {
+    // Initialize completeness checker
+    userCompletenessChecker.initializeAutoCheck()
+    
     // Check for existing session on mount
     const checkInitialSession = async () => {
       try {
