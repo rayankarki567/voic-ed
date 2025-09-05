@@ -76,6 +76,7 @@ const reducer = (state: State, action: Action): State => {
         toastTimeouts.set(
           toastId,
           setTimeout(() => {
+            dispatch({ type: actionTypes.REMOVE_TOAST, toastId })
             toastTimeouts.delete(toastId)
           }, TOAST_REMOVE_DELAY),
         )
@@ -87,6 +88,7 @@ const reducer = (state: State, action: Action): State => {
           t.id === toastId || toastId === undefined
             ? {
                 ...t,
+                open: false,  // ✅ This is the key fix - set open to false
               }
             : t,
         ),
