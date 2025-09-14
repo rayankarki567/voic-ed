@@ -72,30 +72,76 @@ export default function PetitionsPage() {
     // Customize data based on ID
     switch (id) {
       case 1:
-        return baseData
+        return {
+          ...baseData,
+          id: 1,
+          title: "Reduce Class Time from 12:40 to 11:00 AM",
+          description: "We request the university to reduce daily class duration from the current 12:40 PM to 11:00 AM or even 9:00 AM if possible to allow students more time for self-study and personal activities.",
+          creator: "Mark Smith",
+          signatures: 78,
+          goal: 150,
+          category: "Academic",
+          status: "active"
+        }
       case 2:
         return {
           ...baseData,
           id: 2,
-          title: "24/7 Study Spaces in Student Center",
-          description: "Request for round-the-clock study spaces in the student center to provide students with more flexible study options.",
+          title: "Allow Full Usage of Laptops and Phones in Classrooms",
+          description: "Request to allow students to use laptops and mobile devices freely in classrooms for note-taking, research, and educational purposes during lectures.",
           creator: "Sarah Johnson",
-          signatures: 68,
-          goal: 150,
-          category: "Facilities",
+          signatures: 92,
+          goal: 120,
+          category: "Academic",
           status: "active"
         }
       case 3:
         return {
           ...baseData,
           id: 3,
-          title: "More Power Outlets in Library Study Areas",
-          description: "Request to install additional power outlets in library study areas to accommodate students' electronic devices.",
+          title: "Change Canteen Contractor and Add New Food Options",
+          description: "Request to change the current canteen contractor and introduce diverse, affordable food options with better quality and easier ordering system for students.",
           creator: "Alex Chen",
-          signatures: 92,
-          goal: 75,
+          signatures: 156,
+          goal: 200,
+          category: "Facilities",
+          status: "active"
+        }
+      case 4:
+        return {
+          ...baseData,
+          id: 4,
+          title: "More Power Outlets in Classroom Areas",
+          description: "Request to install additional power outlets in classroom areas to accommodate students' electronic devices like laptops and tablets during lectures.",
+          creator: "Emily Davis",
+          signatures: 87,
+          goal: 100,
           category: "Facilities",
           status: "completed"
+        }
+      case 5:
+        return {
+          ...baseData,
+          id: 5,
+          title: "Convert All Rooms to Full Digital Classroom like in 318",
+          description: "Request to convert all classrooms into fully digital classrooms with smart boards, high-speed internet, and digital learning tools for modern education delivery.",
+          creator: "Michael Wilson",
+          signatures: 64,
+          goal: 80,
+          category: "Technology",
+          status: "active"
+        }
+      case 6:
+        return {
+          ...baseData,
+          id: 6,
+          title: "Improve Campus WiFi Speed and Coverage",
+          description: "Request to upgrade the campus WiFi infrastructure to provide faster internet speeds and better coverage across all academic buildings and dormitories.",
+          creator: "Lisa Zhang",
+          signatures: 134,
+          goal: 150,
+          category: "Technology",
+          status: "active"
         }
       default:
         return { ...baseData, id }
@@ -128,7 +174,7 @@ export default function PetitionsPage() {
   useEffect(() => {
     // Generate petitions from the same data source as details page
     const timer = setTimeout(() => {
-      const petitionData = [1, 2, 3].map(id => {
+      const petitionData = [1, 2, 3, 4, 5, 6].map(id => {
         const data = getPetitionData(id)
         return convertToPetition(data)
       })

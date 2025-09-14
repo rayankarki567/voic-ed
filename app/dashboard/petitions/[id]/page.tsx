@@ -39,28 +39,108 @@ export default function PetitionDetailsPage() {
   useEffect(() => {
     const getInitialSignatures = (id: number) => {
       switch (id) {
-        case 1: return 45
-        case 2: return 68
-        case 3: return 92
+        case 1: return 78
+        case 2: return 92
+        case 3: return 156
+        case 4: return 87
+        case 5: return 64
+        case 6: return 134
         default: return 45
       }
     }
     setCurrentSignatures(getInitialSignatures(petitionId))
   }, [petitionId])
 
+  // Function to get petition data by ID (same as list page)
+  const getPetitionData = (id: number) => {
+    switch (id) {
+      case 1:
+        return {
+          title: "Reduce Class Time from 12:40 to 11:00 AM",
+          description: "We request the university to reduce daily class duration from the current 12:40 PM to 11:00 AM or even 9:00 AM if possible to allow students more time for self-study and personal activities.",
+          creator: "Mark Smith",
+          goal: 150,
+          category: "Academic",
+          createdAt: "May 5, 2025",
+          status: "Under Review"
+        }
+      case 2:
+        return {
+          title: "Allow Full Usage of Laptops and Phones in Classrooms",
+          description: "Request to allow students to use laptops and mobile devices freely in classrooms for note-taking, research, and educational purposes during lectures.",
+          creator: "Sarah Johnson",
+          goal: 120,
+          category: "Academic",
+          createdAt: "May 3, 2025",
+          status: "Under Review"
+        }
+      case 3:
+        return {
+          title: "Change Canteen Contractor and Add New Food Options",
+          description: "Request to change the current canteen contractor and introduce diverse, affordable food options with better quality and easier ordering system for students.",
+          creator: "Alex Chen",
+          goal: 200,
+          category: "Facilities",
+          createdAt: "May 1, 2025",
+          status: "Under Review"
+        }
+      case 4:
+        return {
+          title: "More Power Outlets in Classroom Areas",
+          description: "Request to install additional power outlets in classroom areas to accommodate students' electronic devices like laptops and tablets during lectures.",
+          creator: "Emily Davis",
+          goal: 100,
+          category: "Facilities",
+          createdAt: "April 28, 2025",
+          status: "Completed"
+        }
+      case 5:
+        return {
+          title: "Convert Room 318 to Full Digital Classroom",
+          description: "Request to convert Room 318 into a fully digital classroom with smart boards, high-speed internet, and digital learning tools for modern education delivery.",
+          creator: "Michael Wilson",
+          goal: 80,
+          category: "Technology",
+          createdAt: "April 25, 2025",
+          status: "Under Review"
+        }
+      case 6:
+        return {
+          title: "Improve Campus WiFi Speed and Coverage",
+          description: "Request to upgrade the campus WiFi infrastructure to provide faster internet speeds and better coverage across all academic buildings and dormitories.",
+          creator: "Lisa Zhang",
+          goal: 150,
+          category: "Technology",
+          createdAt: "April 22, 2025",
+          status: "Under Review"
+        }
+      default:
+        return {
+          title: "Extend Library Hours During Exam Period",
+          description: "We request the university to extend library hours to 24/7 during the final exam period to accommodate students' study needs.",
+          creator: "Mark Smith",
+          goal: 100,
+          category: "Academic",
+          createdAt: "May 5, 2025",
+          status: "Under Review"
+        }
+    }
+  }
+
+  const petitionData = getPetitionData(petitionId)
+
   const petition = {
     id: petitionId,
-    title: "Extend Library Hours During Exam Period",
-    description:
-      "We request the university to extend library hours to 24/7 during the final exam period to accommodate students' study needs. This would greatly benefit students who prefer studying in the library environment and need access to resources that may not be available elsewhere. Extended hours would also help alleviate overcrowding during peak study times.",
-    creator: "Mark Smith",
+    title: petitionData.title,
+    description: petitionData.description,
+    creator: petitionData.creator,
     creatorRole: "Student",
     signatures: currentSignatures, // Use the state value instead of hardcoded
-    goal: 100,
+    goal: petitionData.goal,
     daysRemaining: 15,
-    category: "Academic",
-    createdAt: "May 5, 2025",
-    status: "Under Review",
+    category: petitionData.category,
+    createdAt: petitionData.createdAt,
+    status: petitionData.status,
     lastUpdated: "May 10, 2025",
     reviewedBy: "Academic Affairs Committee",
     escalationHistory: [
