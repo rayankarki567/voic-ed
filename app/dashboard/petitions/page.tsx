@@ -7,16 +7,43 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FileText, Plus, Search } from "lucide-react"
 import { PetitionCard } from "./_components/petition-card"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from '@/types/database.types'
 
-type Petition = Database['public']['Tables']['petitions']['Row'] & {
+// Use the same petition structure as the details page
+type PetitionData = {
+  id: number
+  title: string
+  description: string
+  creator: string
+  creatorRole: string
+  signatures: number
+  goal: number
+  daysRemaining: number
+  category: string
+  createdAt: string
+  status: string
+  lastUpdated: string
+}
+
+type Petition = {
+  id: string
+  title: string
+  description: string
+  user_id: string
+  category: string
+  target_signatures: number
+  current_signatures: number
+  status: string
+  created_at: string
+  updated_at: string
+  expires_at: string | null
+  escalated_at: string | null
+  escalated_to: string | null
+  signature_count?: number
   profiles: {
     first_name: string | null
     last_name: string | null
     student_id: string | null
   } | null
-  signature_count?: number
 }
 
 export default function PetitionsPage() {
@@ -24,88 +51,94 @@ export default function PetitionsPage() {
   const [petitions, setPetitions] = useState<Petition[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClientComponentClient<Database>()
 
-  useEffect(() => {
-    // Load data from database now that it has been seeded
-    fetchPetitions()
-  }, [])
+  // Function to get petition data by ID (same logic as details page)
+  const getPetitionData = (id: number): PetitionData => {
+    const baseData = {
+      id,
+      title: "Extend Library Hours During Exam Period",
+      description: "We request the university to extend library hours to 24/7 during the final exam period to accommodate students' study needs.",
+      creator: "Mark Smith",
+      creatorRole: "Student",
+      signatures: 45,
+      goal: 100,
+      daysRemaining: 15,
+      category: "Academic",
+      createdAt: "May 5, 2025",
+      status: "Under Review",
+      lastUpdated: "May 10, 2025",
+    }
 
-  async function fetchPetitions() {
-    try {
-      setLoading(true)
-      
-      // First, try to get just the petitions without joins to debug
-      const { data: petitionsData, error: petitionsError } = await supabase
-        .from('petitions')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (petitionsError) {
-        console.error('Petitions query error:', petitionsError)
-        throw petitionsError
-      }
-
-      console.log('Petitions data:', petitionsData)
-
-      // If petitions fetch works, try to get profiles separately
-      if (petitionsData && petitionsData.length > 0) {
-        const userIds = petitionsData.map(p => p.user_id).filter(Boolean)
-        
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, first_name, last_name, student_id')
-          .in('user_id', userIds)
-
-        if (profilesError) {
-          console.error('Profiles query error:', profilesError)
+    // Customize data based on ID
+    switch (id) {
+      case 1:
+        return baseData
+      case 2:
+        return {
+          ...baseData,
+          id: 2,
+          title: "24/7 Study Spaces in Student Center",
+          description: "Request for round-the-clock study spaces in the student center to provide students with more flexible study options.",
+          creator: "Sarah Johnson",
+          signatures: 68,
+          goal: 150,
+          category: "Facilities",
+          status: "active"
         }
-
-        console.log('Profiles data:', profilesData)
-
-        // Get signature counts
-        const petitionIds = petitionsData.map(p => p.id)
-        const { data: signatureCounts, error: signaturesError } = await supabase
-          .from('petition_signatures')
-          .select('petition_id')
-          .in('petition_id', petitionIds)
-
-        if (signaturesError) {
-          console.error('Signatures query error:', signaturesError)
+      case 3:
+        return {
+          ...baseData,
+          id: 3,
+          title: "More Power Outlets in Library Study Areas",
+          description: "Request to install additional power outlets in library study areas to accommodate students' electronic devices.",
+          creator: "Alex Chen",
+          signatures: 92,
+          goal: 75,
+          category: "Facilities",
+          status: "completed"
         }
-
-        console.log('Signature counts:', signatureCounts)
-
-        // Count signatures per petition
-        const signatureCountMap = signatureCounts?.reduce((acc, sig) => {
-          acc[sig.petition_id] = (acc[sig.petition_id] || 0) + 1
-          return acc
-        }, {} as Record<string, number>) || {}
-
-        // Create profiles map
-        const profilesMap = profilesData?.reduce((acc, profile) => {
-          acc[profile.user_id] = profile
-          return acc
-        }, {} as Record<string, any>) || {}
-
-        // Combine data
-        const petitionsWithCounts = petitionsData.map(petition => ({
-          ...petition,
-          signature_count: signatureCountMap[petition.id] || 0,
-          profiles: petition.user_id ? profilesMap[petition.user_id] || null : null
-        }))
-
-        setPetitions(petitionsWithCounts)
-      } else {
-        setPetitions([])
-      }
-    } catch (error: any) {
-      console.error('Error fetching petitions:', error)
-      setError(error?.message || 'Unknown error occurred')
-    } finally {
-      setLoading(false)
+      default:
+        return { ...baseData, id }
     }
   }
+
+  // Convert petition data to the format expected by PetitionCard
+  const convertToPetition = (data: PetitionData): Petition => ({
+    id: data.id.toString(),
+    title: data.title,
+    description: data.description,
+    user_id: `user${data.id}`,
+    category: data.category,
+    target_signatures: data.goal,
+    current_signatures: data.signatures,
+    status: data.status === "completed" ? "completed" : "active",
+    created_at: new Date(data.createdAt).toISOString(),
+    updated_at: new Date(data.lastUpdated).toISOString(),
+    expires_at: null,
+    escalated_at: null,
+    escalated_to: null,
+    signature_count: data.signatures,
+    profiles: {
+      first_name: data.creator.split(' ')[0],
+      last_name: data.creator.split(' ')[1] || '',
+      student_id: `STU00${data.id}`
+    }
+  })
+
+  useEffect(() => {
+    // Generate petitions from the same data source as details page
+    const timer = setTimeout(() => {
+      const petitionData = [1, 2, 3].map(id => {
+        const data = getPetitionData(id)
+        return convertToPetition(data)
+      })
+      
+      setPetitions(petitionData)
+      setLoading(false)
+    }, 500) // Quick 0.5 second loading
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const filteredPetitions = petitions.filter(petition =>
     petition.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

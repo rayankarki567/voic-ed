@@ -60,16 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Fetching user data for:', userId)
       
-      // First, ensure user completeness (check/repair missing entries)
-      const completenessResult = await userCompletenessChecker.ensureUserCompleteness(false)
-      
-      if (completenessResult && completenessResult.action_taken !== 'complete') {
-        console.log('User entries were repaired:', completenessResult.action_taken)
-      }
+      // Skip user completeness check for faster loading
+      // const completenessResult = await userCompletenessChecker.ensureUserCompleteness(false)
       
       // Set a timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 10000) // 10 second timeout
+        setTimeout(() => reject(new Error('Request timeout')), 5000) // Reduced to 5 second timeout
       })
       
       const dataPromise = Promise.all([
@@ -92,9 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Handle profile data
       if (profileResponse.error) {
-        console.warn('Profile not found after completeness check:', profileResponse.error.message)
-        // Try to force repair if profile is still missing
-        await userCompletenessChecker.forceUserCompletenessCheck()
+        console.warn('Profile not found:', profileResponse.error.message)
+        // Skip force repair for faster loading
+        // await userCompletenessChecker.forceUserCompletenessCheck()
         setProfile(null)
       } else {
         console.log('Profile loaded:', profileResponse.data)
@@ -103,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Handle security settings
       if (securityResponse.error) {
-        console.warn('Security settings not found after completeness check:', securityResponse.error.message)
+        console.warn('Security settings not found:', securityResponse.error.message)
         setSecuritySettings(null)
       } else {
         console.log('Security settings loaded:', securityResponse.data)
@@ -112,12 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
     } catch (error) {
       console.error('Error fetching user data:', error)
-      // Try force completeness check as last resort
-      try {
-        await userCompletenessChecker.forceUserCompletenessCheck()
-      } catch (repairError) {
-        console.error('Failed to repair user completeness:', repairError)
-      }
+      // Skip force completeness check for faster loading
+      // try {
+      //   await userCompletenessChecker.forceUserCompletenessCheck()
+      // } catch (repairError) {
+      //   console.error('Failed to repair user completeness:', repairError)
+      // }
       // Set defaults and continue
       setProfile(null)
       setSecuritySettings(null)
@@ -125,8 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Initialize completeness checker
-    userCompletenessChecker.initializeAutoCheck()
+    // Skip completeness checker initialization for faster loading
+    // userCompletenessChecker.initializeAutoCheck()
     
     // Check for existing session on mount
     const checkInitialSession = async () => {

@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,9 +20,33 @@ export default function PetitionDetailsPage() {
   const { toast } = useToast()
   const [hasSignedPetition, setHasSignedPetition] = useState(false)
   const [commentText, setCommentText] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentSignatures, setCurrentSignatures] = useState(45) // Track signatures locally
 
   // In a real app, this would come from an API call using the ID
   const petitionId = Number(params.id)
+
+  // Simulate loading for better UX
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000) // 1 second loading
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Set initial signatures based on petition ID
+  useEffect(() => {
+    const getInitialSignatures = (id: number) => {
+      switch (id) {
+        case 1: return 45
+        case 2: return 68
+        case 3: return 92
+        default: return 45
+      }
+    }
+    setCurrentSignatures(getInitialSignatures(petitionId))
+  }, [petitionId])
 
   const petition = {
     id: petitionId,
@@ -31,7 +55,7 @@ export default function PetitionDetailsPage() {
       "We request the university to extend library hours to 24/7 during the final exam period to accommodate students' study needs. This would greatly benefit students who prefer studying in the library environment and need access to resources that may not be available elsewhere. Extended hours would also help alleviate overcrowding during peak study times.",
     creator: "Mark Smith",
     creatorRole: "Student",
-    signatures: 45,
+    signatures: currentSignatures, // Use the state value instead of hardcoded
     goal: 100,
     daysRemaining: 15,
     category: "Academic",
@@ -79,11 +103,14 @@ export default function PetitionDetailsPage() {
   }
 
   const handleSignPetition = () => {
-    setHasSignedPetition(true)
-    toast({
-      title: "Petition Signed",
-      description: "Thank you for supporting this petition!",
-    })
+    if (!hasSignedPetition) {
+      setCurrentSignatures(prev => prev + 1) // Increment signature count
+      setHasSignedPetition(true)
+      toast({
+        title: "Petition Signed",
+        description: "Thank you for supporting this petition!",
+      })
+    }
   }
 
   const handleSubmitComment = (e: React.FormEvent) => {
@@ -96,6 +123,18 @@ export default function PetitionDetailsPage() {
       setCommentText("")
       // In a real app, this would post to an API
     }
+  }
+
+  // Show loading screen
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading petition details...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
